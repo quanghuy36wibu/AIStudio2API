@@ -1,7 +1,7 @@
 FROM --platform=$BUILDPLATFORM node:22-bookworm-slim AS web
 WORKDIR /src/web
 COPY web/package.json web/package-lock.json ./
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN npm ci
 COPY web/ ./
 COPY internal/i18n/messages/ /src/internal/i18n/messages/
 RUN npm run build
@@ -19,10 +19,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends xz-utils && rm 
     && curl -fsSL https://github.com/Mag1cFall/libwebp/releases/download/$LIBWEBP/libwebp-$LIBWEBP-linux-$TARGETARCH.tar.gz | tar -xz -C /opt/libwebp
 WORKDIR /src
 COPY go.mod go.sum ./
-RUN --mount=type=cache,target=/go/pkg/mod go mod download
+RUN go mod download
 COPY . .
 COPY --from=web /src/internal/webui/dist internal/webui/dist
-RUN --mount=type=cache,target=/go/pkg/mod --mount=type=cache,target=/root/.cache/go-build \
+RUN \
     target=$([ "$TARGETARCH" = arm64 ] && echo aarch64 || echo x86_64) \
     && CGO_ENABLED=1 GOOS=linux GOARCH=$TARGETARCH \
     CC="/opt/zig/zig cc -target $target-linux-musl" CXX="/opt/zig/zig c++ -target $target-linux-musl" \
